@@ -8,7 +8,7 @@
 using namespace std;
 
 
-int main() {
+int main(int argc, char** argv) {
 	FileManager fm;
 
 	// Create a brand new file
