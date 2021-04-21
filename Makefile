@@ -1,5 +1,7 @@
 sampleobjects = buffer_manager.o file_manager.o
 
+basicfiles = constants.h errors.h file_manager.h buffer_manager.h 
+
 join2 : $(sampleobjects) join2.o
 	     g++ -std=c++11 -o join2 $(sampleobjects) join2.o
 
@@ -39,7 +41,7 @@ sample_run.o : sample_run.cpp
 buffer_manager.o : buffer_manager.cpp
 	g++ -std=c++11 -c buffer_manager.cpp
 
-file_manager.o : file_manager.cpp
+file_manager.o : file_manager.cpp $(basicfiles)
 	g++ -std=c++11 -c file_manager.cpp
 
 clean :

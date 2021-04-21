@@ -5,6 +5,11 @@
 #include "errors.h"
 #include<cstring>
 
+//included by me
+#include <fstream>
+#include <string>
+#include <sstream>
+
 using namespace std;
 
 
@@ -14,12 +19,23 @@ int main(int argc, char** argv) {
 		cout << "Incorrect arguements!!" << endl << "Expected run command: ./binarysearch <sorted_input_filename> <query_filename>.txt <output_filename>"<<endl;
 		exit(0);
 	}
-	const char* inputfile  = argv[1];
-	const char* queryfile = argv[2];
-	const char* outfile = argv[3];
+	const char* inputfileName  = argv[1];
+	const char* queryfileName = argv[2];
+	const char* outfileName = argv[3];
+
+	ifstream queryfile(queryfileName);
+	string myText;
+	int myInt;
+	while (getline (queryfile, myText)) {
+		stringstream ss(myText);
+		ss>>myText;
+		ss>>myInt;
+		cout<<myInt<<endl;
+	}
+	queryfile.close();
+
 
 	FileManager fm;
-
 	// Create a brand new file
 	FileHandler fh = fm.CreateFile("temp.txt");
 	cout << "File created " << endl;

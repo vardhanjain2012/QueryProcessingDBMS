@@ -1,3 +1,18 @@
+Run:
+1) With sample test cases
+./linearsearch.sh
+./binarysearch.sh
+./deletion.sh
+./join1.sh
+./join2.sh
+
+2) With custom test cases
+./linearsearch <input_filename> <query_filename>.txt <output_filename>
+./binarysearch <sorted_input_filename> <query_filename>.txt <output_filename>
+./deletion <sorted_input_filename> <query_filename>
+./join1 <unsorted_input_file1name> <unsorted_input_file2name> <output_filename>
+./join2 <unsorted_input_file1name> <sorted_input_file2name> <output_filename>
+
 # COL362/632 Assignment 3
 
 - Code

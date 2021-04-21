@@ -5,6 +5,11 @@
 #include "errors.h"
 #include<cstring>
 
+//included by me
+#include <fstream>
+#include <string>
+#include <sstream>
+
 using namespace std;
 
 
@@ -15,11 +20,22 @@ int main(int argc, char** argv) {
 		exit(0);
 	}
 
-	const char* inputfile  = argv[1];
-	const char* queryfile = argv[2];
+	const char* inputfileName  = argv[1];
+	const char* queryfileName = argv[2];
+
+	ifstream queryfile(queryfileName);
+	string myText;
+	int myInt;
+	while (getline (queryfile, myText)) {
+		stringstream ss(myText);
+		ss>>myText;
+		ss>>myInt;
+		cout<<myInt<<endl;
+	}
+	queryfile.close();
+
 
 	FileManager fm;
-
 	// Create a brand new file
 	FileHandler fh = fm.CreateFile("temp.txt");
 	cout << "File created " << endl;

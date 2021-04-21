@@ -5,60 +5,89 @@
 #include "errors.h"
 #include<cstring>
 
+//included by me
+#include <fstream>
+#include <string>
+#include <sstream>
+
+
 using namespace std;
 
-
+FileManager *fm;
 int main(int argc, char** argv) {
 
 	if(argc!=4){
 		cout << "Incorrect arguements!!" << endl << "Expected run command: ./linearsearch <input_filename> <query_filename>.txt <output_filename>"<<endl;
 		exit(0);
 	}
-	const char* inputfile  = argv[1];
-	const char* queryfile = argv[2];
-	const char* outfile = argv[3];
+	const char* inputfileName  = argv[1];
+	const char* queryfileName = argv[2];
+	const char* outfileName = argv[3];
 
-	FileManager fm;
-	// Create a brand new file
-	FileHandler fh = fm.CreateFile("temp.txt");
-	cout << "File created " << endl;
+	fm = new FileManager();
+	FileHandler fhin = fm->OpenFile(inputfileName);
+	FileHandler fhout = fm->CreateFile(outfileName);
+	ifstream queryfile(queryfileName);
+	string myText;
+	int myInt;
+	PageHandler outPage = fhout.NewPage();
+	int outPageNumber = 0;
+	int outIndex = 0;
+	while (getline (queryfile, myText)) {
+		stringstream ss(myText);
+		ss>>myText;
+		ss>>myInt;
+		// cout<<"Search "<<myInt<<endl;
 
-	// Create a new page
-	PageHandler ph = fh.NewPage ();
-	char *data = ph.GetData ();
+		PageHandler firstPage = fhin.FirstPage();
+		int firstPageNumber = firstPage.GetPageNum();
+		fhin.UnpinPage(firstPageNumber);
+		PageHandler lastPage = fhin.LastPage();
+		int lastPageNumber = lastPage.GetPageNum();
+		fhin.UnpinPage(lastPageNumber);
 
-	// Store an integer at the very first location
-	int num = 5;
-	memcpy (&data[0], &num, sizeof(int));
+		int currPageNumber = firstPageNumber;
+		while(currPageNumber<=lastPageNumber){
+			PageHandler currPage = fhin.PageAt(currPageNumber);
+			char* data = currPage.GetData();
+			int num;
+			for(unsigned int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
+				memcpy (&num, &data[i], sizeof(int));
+				if(num==myInt){
+					// cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
+					pair<int, int> mySearch = make_pair(currPageNumber, i);
+					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+						fhout.UnpinPage(outPageNumber);
+						outPage = fhout.NewPage();
+						outPageNumber+=1;
+						outIndex=0;
+					}
+					char* dataOut = outPage.GetData();
+					memcpy (&dataOut[outIndex], &mySearch, sizeof(pair<int, int>));
+					fhout.MarkDirty(outPageNumber);
+					outIndex+=sizeof(pair<int, int>);
+				}
+			}
 
-	// Store an integer at the second location
-	num = 1000;
-	memcpy (&data[4], &num, sizeof(int));
-
-	// Flush the page
-	fh.FlushPages ();
-	cout << "Data written and flushed" << endl;
-
-	// Close the file
-	fm.CloseFile(fh);
-
-	// Reopen the same file, but for reading this time
-	fh = fm.OpenFile ("temp.txt");
-	cout << "File opened" << endl;
-
-	// Get the very first page and its data
-	ph = fh.FirstPage ();
-	data = ph.GetData ();
-
-	// Output the first integer
-	memcpy (&num, &data[0], sizeof(int));
-	cout << "First number: " << num << endl;
-
-	// Output the second integer
-	memcpy (&num, &data[4], sizeof(int));
-	cout << "Second number: " << num << endl;;
-
-	// Close the file and destory it
-	fm.CloseFile (fh);
-	fm.DestroyFile ("temp.txt");
+			fhin.UnpinPage(currPageNumber);
+			currPageNumber+=1;
+		}
+		pair<int, int> mySearch = make_pair(-1, -1);
+		if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+			fhout.UnpinPage(outPageNumber);
+			outPage = fhout.NewPage();
+			outPageNumber+=1;
+			outIndex=0;
+		}
+		char* dataOut = outPage.GetData();
+		memcpy (&dataOut[outIndex], &mySearch, sizeof(pair<int, int>));
+		fhout.MarkDirty(outPageNumber);
+		outIndex+=sizeof(pair<int, int>);
+	}
+	// fm->PrintBuffer();
+	fm->CloseFile(fhin);
+	fm->CloseFile(fhout);
+	fm->ClearBuffer();
+	delete fm;
+	queryfile.close();
 }

@@ -11,7 +11,7 @@ using namespace std;
 int main(int argc, char** argv) {
 
 	if(argc!=4){
-		cout << "Incorrect arguements!!" << endl << "Expected run command: ./join2 <unsorted input file1name> <sorted input file2name> <output filename>"<<endl;
+		cout << "Incorrect arguements!!" << endl << "Expected run command: ./join2 <unsorted_input_file1name> <sorted_input_file2name> <output_filename>"<<endl;
 		exit(0);
 	}
 
