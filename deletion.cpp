@@ -8,7 +8,16 @@
 using namespace std;
 
 
-int main() {
+int main(int argc, char** argv) {
+
+	if(argc!=3){
+		cout << "Incorrect arguements!!" << endl << "Expected run command: ./deletion <sorted_input_filename> <query_filename>.txt"<<endl;
+		exit(0);
+	}
+
+	const char* inputfile  = argv[1];
+	const char* queryfile = argv[2];
+
 	FileManager fm;
 
 	// Create a brand new file

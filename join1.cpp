@@ -8,7 +8,16 @@
 using namespace std;
 
 
-int main() {
+int main(int argc, char** argv) {
+
+	if(argc!=4){
+		cout << "Incorrect arguements!!" << endl << "Expected run command: ./join1 <unsorted_input_file1name> <unsorted_input_file2name> <output_filename>"<<endl;
+		exit(0);
+	}
+	const char* inputfile1  = argv[1];
+	const char* inputfile2 = argv[2];
+	const char* outfile = argv[3];
+
 	FileManager fm;
 
 	// Create a brand new file

@@ -8,7 +8,16 @@
 using namespace std;
 
 
-int main() {
+int main(int argc, char** argv) {
+
+	if(argc!=4){
+		cout << "Incorrect arguements!!" << endl << "Expected run command: ./binarysearch <sorted_input_filename> <query_filename>.txt <output_filename>"<<endl;
+		exit(0);
+	}
+	const char* inputfile  = argv[1];
+	const char* queryfile = argv[2];
+	const char* outfile = argv[3];
+
 	FileManager fm;
 
 	// Create a brand new file
