@@ -9,7 +9,8 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-
+#include <climits>
+#include <cstdint> 
 
 using namespace std;
 
@@ -37,7 +38,7 @@ int main(int argc, char** argv) {
 		stringstream ss(myText);
 		ss>>myText;
 		ss>>myInt;
-		// cout<<"Search "<<myInt<<endl;
+		cout<<"Search "<<myInt<<endl;
 
 		PageHandler firstPage = fhin.FirstPage();
 		int firstPageNumber = firstPage.GetPageNum();
@@ -53,12 +54,18 @@ int main(int argc, char** argv) {
 			int num;
 			for(unsigned int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
 				memcpy (&num, &data[i], sizeof(int));
+				// cout<<"Page: "<<currPageNumber<<" index: "<<i<<" num: "<<num<<endl;
 				if(num==myInt){
-					// cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
-					pair<int, int> mySearch = make_pair(currPageNumber, i);
+					cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
+					pair<int, int> mySearch = make_pair(currPageNumber, i/(sizeof(int)));
 					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 						fhout.UnpinPage(outPageNumber);
 						outPage = fhout.NewPage();
+						pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+						char* dataOut1 = outPage.GetData();
+						for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+							memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+						}
 						outPageNumber+=1;
 						outIndex=0;
 					}
@@ -76,6 +83,11 @@ int main(int argc, char** argv) {
 		if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 			fhout.UnpinPage(outPageNumber);
 			outPage = fhout.NewPage();
+			pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+			char* dataOut1 = outPage.GetData();
+			for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+				memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+			}
 			outPageNumber+=1;
 			outIndex=0;
 		}
@@ -83,6 +95,7 @@ int main(int argc, char** argv) {
 		memcpy (&dataOut[outIndex], &mySearch, sizeof(pair<int, int>));
 		fhout.MarkDirty(outPageNumber);
 		outIndex+=sizeof(pair<int, int>);
+		// break;
 	}
 	// fm->PrintBuffer();
 	fm->CloseFile(fhin);
@@ -90,4 +103,5 @@ int main(int argc, char** argv) {
 	fm->ClearBuffer();
 	delete fm;
 	queryfile.close();
+	return 0;
 }
