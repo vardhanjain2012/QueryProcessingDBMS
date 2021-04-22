@@ -45,19 +45,29 @@ int main(int argc, char** argv) {
 	PageHandler inputPage1 = fhin1.FirstPage();
 	startPageNum1 = inputPage1.GetPageNum();
 	fhin1.UnpinPage(startPageNum1);
+	//INFORM
+	fhin1.FlushPage(startPageNum1);
 	int endPageNum1;
 	inputPage1 = fhin1.LastPage();
 	endPageNum1 = inputPage1.GetPageNum();
 	fhin1.UnpinPage(endPageNum1);
+	//INFORM
+	fhin1.FlushPage(endPageNum1);
 
 	int startPageNum2;
 	PageHandler inputPage2 = fhin2.FirstPage();
 	startPageNum2 = inputPage2.GetPageNum();
 	fhin2.UnpinPage(startPageNum2);
+	//INFORM
+	fhin2.FlushPage(startPageNum2);
+
 	int endPageNum2;
 	inputPage2 = fhin2.LastPage();
 	endPageNum2 = inputPage2.GetPageNum();
-	fhin1.UnpinPage(endPageNum2);
+	//INFORM: there was a typo here fhin1 instead of fhin2
+	fhin2.UnpinPage(endPageNum2);
+	//INFORM
+	fhin2.FlushPage(endPageNum2);
 
 	int direction = 1;
 
