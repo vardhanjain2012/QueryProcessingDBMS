@@ -44,6 +44,12 @@ buffer_manager.o : buffer_manager.cpp
 file_manager.o : file_manager.cpp $(basicfiles)
 	g++ -std=c++11 -c file_manager.cpp
 
+viewcontent : $(sampleobjects) viewcontent.o
+	     g++ -std=c++11 -o viewcontent $(sampleobjects) viewcontent.o
+
+viewcontent.o : viewcontent.cpp
+	g++ -std=c++11 -c viewcontent.cpp
+
 clean :
 	rm -f *.o
-	rm -f sample_run linearsearch binarysearch deletion join1 join2
+	rm -f sample_run linearsearch binarysearch deletion join1 join2 viewcontent

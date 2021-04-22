@@ -1,3 +1,5 @@
+// TORUN: ./join1 TestCases/TC_join1/input1_join1 TestCases/TC_join1/input2_join1 TestCases/TC_join1/myOutput
+
 #include<iostream>
 #include "file_manager.h"
 #include "errors.h"
