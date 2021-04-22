@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 					if(num1==num2){
 
 						// cout<<"Found! "<<currPageNumber1<<" "<<i<<endl;
-						if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+						if(outIndex>=PAGE_CONTENT_SIZE && fhout.FlushPage(outPageNumber)){
 							fhout.UnpinPage(outPageNumber);
 							outPage = fhout.NewPage();
 							int tmp = INT_MIN;

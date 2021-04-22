@@ -1,5 +1,3 @@
-//Sample file for students to get their code running
-
 #include<iostream>
 #include "file_manager.h"
 #include "errors.h"
@@ -12,6 +10,7 @@
 using namespace std;
 
 FileManager *fm;
+
 int main(int argc, char** argv) {
 
 	if(argc!=4){
@@ -23,12 +22,23 @@ int main(int argc, char** argv) {
 	const char* outfile = argv[3];
 
 	fm = new FileManager();
+
 	FileHandler fhin1 = fm->OpenFile(inputfile1);
 	FileHandler fhin2 = fm->OpenFile(inputfile2);
 	FileHandler fhout = fm->CreateFile(outfile);
+
 	PageHandler outPage = fhout.NewPage();
+
+	//INFORM: This is essential
+	int tmp = INT_MIN;
+	char* dataOut_tmp = outPage.GetData();
+	for(int k=0;k<PAGE_CONTENT_SIZE;k+=sizeof(int)){
+		memcpy (&dataOut_tmp[k], &tmp, sizeof(int));
+	}
+
 	int outPageNumber = 0;
 	int outIndex = 0;
+
 	int startPageNum1;
 	PageHandler inputPage1 = fhin1.FirstPage();
 	startPageNum1 = inputPage1.GetPageNum();
@@ -46,27 +56,38 @@ int main(int argc, char** argv) {
 	inputPage2 = fhin2.LastPage();
 	endPageNum2 = inputPage2.GetPageNum();
 	fhin1.UnpinPage(endPageNum2);
+
+	int direction = 1;
+
 	for(int currPageNum1 = startPageNum1; currPageNum1<=endPageNum1; currPageNum1+=1){
+		// INFORM: this was moved out of for loop
+		inputPage1 = fhin1.PageAt(currPageNum1);
+		char* dataIn1 = inputPage1.GetData();
+
 		for(int currPageNum2 = startPageNum2; currPageNum2<=endPageNum2; currPageNum2+=1){
-			inputPage1 = fhin1.PageAt(currPageNum1);
-			char* dataIn1 = inputPage1.GetData();
+			// INFORM: this was moved out of for loop
+			inputPage2 = fhin2.PageAt(currPageNum2);
+			char* dataIn2 = inputPage2.GetData();
+
 			int num1, num2;
+
 			for(int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
 				memcpy (&num1, &dataIn1[i], sizeof(int));
-				inputPage2 = fhin2.PageAt(currPageNum2);
-				char* dataIn2 = inputPage2.GetData();
+				
 				for(int j=0; j<PAGE_CONTENT_SIZE; j+=sizeof(int)){
 					memcpy (&num2, &dataIn2[j], sizeof(int));
 					if(num1==num2){
 
 						// cout<<"Found! "<<currPageNumber1<<" "<<i<<endl;
-						if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+						if(outIndex>=PAGE_CONTENT_SIZE){
+							//INFORM/ASK: Can unpin happen after flush as was earlier?
 							fhout.UnpinPage(outPageNumber);
+							fhout.FlushPage(outPageNumber);
 							outPage = fhout.NewPage();
 							int tmp = INT_MIN;
-							char* dataOut1 = outPage.GetData();
+							char* dataOut_tmp = outPage.GetData();
 							for(int k=0;k<PAGE_CONTENT_SIZE;k+=sizeof(int)){
-								memcpy (&dataOut1[k], &tmp, sizeof(int));
+								memcpy (&dataOut_tmp[k], &tmp, sizeof(int));
 							}
 							outPageNumber+=1;
 							outIndex=0;
@@ -76,18 +97,27 @@ int main(int argc, char** argv) {
 						fhout.MarkDirty(outPageNumber);
 						outIndex+=sizeof(int);
 
-
 					}
 				}
 			}
 			fhin2.UnpinPage(currPageNum2);
 		}
 		fhin1.UnpinPage(currPageNum1);
+		//INFORM: necessary to do this as only 1 page of file-1 allowed in memory
+		fhin1.FlushPage(currPageNum1);
 	}
+
+	//INFORM/ASK: unpin-flush the last outpage?
+	fhout.UnpinPage(outPageNumber);
+	fhout.FlushPage(outPageNumber);
+
 	fm->CloseFile(fhin1);
 	fm->CloseFile(fhin2);
 	fm->CloseFile(fhout);
+
+	//TODO/ASK: Is this sufficient to take of dirty files as well?
 	fm->ClearBuffer();
+
 	delete fm;
 	return 0;
 }
