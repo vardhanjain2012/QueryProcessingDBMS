@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 					pair<int,int> out = make_pair(firstPageNumber,firstIndex);
 					char* dataOut = outPage.GetData();
 					memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
+					cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 					fhout.MarkDirty(outPageNumber);
 					outIndex+=sizeof(pair<int, int>);
 
@@ -153,10 +154,13 @@ int main(int argc, char** argv) {
 				pair<int,int> out = make_pair(firstPageNumber,firstIndex);
 				char* dataOut = outPage.GetData();
 				memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
+				cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 				fhout.MarkDirty(outPageNumber);
 				outIndex+=sizeof(pair<int, int>);
 			}
 		}
+
+		
 		//ready to write
 		if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 			fhout.UnpinPage(outPageNumber);
@@ -168,9 +172,10 @@ int main(int argc, char** argv) {
 		pair<int,int> out = make_pair(-1,-1);
 		char* dataOut = outPage.GetData();
 		memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
+		cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 		fhout.MarkDirty(outPageNumber);
+		fhout.FlushPage(outPageNumber);
 		outIndex+=sizeof(pair<int, int>);
-
 		fhout.FlushPages();
 		fm->ClearBuffer();
 	}

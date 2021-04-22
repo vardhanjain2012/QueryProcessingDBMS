@@ -26,6 +26,12 @@ binarysearch : $(sampleobjects) binarysearch.o
 binarysearch.o : binarysearch.cpp
 	g++ -std=c++11 -c binarysearch.cpp
 
+debug : $(sampleobjects) debug.o
+	g++ -std=c++11 -o debug $(sampleobjects) debug.o
+
+debug.o : debug.cpp
+	g++ -std=c++11 -c debug.cpp
+
 linearsearch : $(sampleobjects) linearsearch.o
 	     g++ -std=c++11 -o linearsearch $(sampleobjects) linearsearch.o
 
@@ -44,12 +50,6 @@ buffer_manager.o : buffer_manager.cpp
 file_manager.o : file_manager.cpp $(basicfiles)
 	g++ -std=c++11 -c file_manager.cpp
 
-viewcontent : $(sampleobjects) viewcontent.o
-	     g++ -std=c++11 -o viewcontent $(sampleobjects) viewcontent.o
-
-viewcontent.o : viewcontent.cpp
-	g++ -std=c++11 -c viewcontent.cpp
-
 clean :
 	rm -f *.o
-	rm -f sample_run linearsearch binarysearch deletion join1 join2 viewcontent
+	rm -f sample_run linearsearch binarysearch deletion join1 join2
