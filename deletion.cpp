@@ -1,5 +1,3 @@
-//Sample file for students to get their code running
-
 #include<iostream>
 #include "file_manager.h"
 #include "errors.h"
@@ -9,10 +7,50 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <climits>
+#include <cstdint> 
 
 using namespace std;
 
+FileManager *fm;
 
+//This finction should return the first occurence as pair(pageNumber, index) of myInt in the sorted input file
+pair<int, int> findFirst(int myInt, FileHandler& fhin){
+	pair<int, int> ans = make_pair(-1, -1);
+	return ans;
+}
+
+//This finction should return the last occurence as pair(pageNumber, index) of myInt in the sorted input file
+pair<int, int> findLast(int myInt, FileHandler& fhin){
+	pair<int, int> ans = make_pair(-1, -1);
+	return ans;
+}
+
+pair<int, int> nextPosition(pair<int, int> q){
+	if(q.second==(PAGE_CONTENT_SIZE)){
+		q.second=0;
+		q.first+=1;
+	}
+	else{
+		q.second+=sizeof(int);
+	}
+	return q;
+}
+bool copyRecord(pair<int, int> firstOccurence, pair<int, int> lastOccurence, FileHandler& fhin){
+	PageHandler p1 = fhin.PageAt(firstOccurence.first);
+	PageHandler p2 = fhin.PageAt(lastOccurence.first);
+	char* data1 = p1.GetData();
+	char* data2 = p2.GetData();
+	int num;
+	memcpy(&num, &data2[lastOccurence.second], sizeof(int));
+	memcpy(&data1[firstOccurence.second], &data2[lastOccurence.second], sizeof(int));
+	if(!fhin.MarkDirty(p1.GetPageNum())){
+		cout<<"Error2"<<endl;
+	}
+	fhin.UnpinPage(p1.GetPageNum());
+	fhin.UnpinPage(p2.GetPageNum());
+	return (num==INT_MIN);
+}
 int main(int argc, char** argv) {
 
 	if(argc!=3){
@@ -22,7 +60,8 @@ int main(int argc, char** argv) {
 
 	const char* inputfileName  = argv[1];
 	const char* queryfileName = argv[2];
-
+	fm = new FileManager();
+	FileHandler fhin = fm->OpenFile(inputfileName);
 	ifstream queryfile(queryfileName);
 	string myText;
 	int myInt;
@@ -30,52 +69,38 @@ int main(int argc, char** argv) {
 		stringstream ss(myText);
 		ss>>myText;
 		ss>>myInt;
-		cout<<myInt<<endl;
+
+		pair<int, int> firstOccurence = findFirst(myInt, fhin);
+		pair<int, int> lastOccurence = findLast(myInt, fhin);
+
+		PageHandler lastPage = fhin.LastPage();
+		int lastPageNumber = lastPage.GetPageNum();
+		fhin.UnpinPage(lastPageNumber);
+
+		if(firstOccurence.first<0||firstOccurence.first>lastPageNumber||lastOccurence.first<0||lastOccurence.first>lastPageNumber){
+			continue;
+		}
+		lastOccurence = nextPosition(lastOccurence);
+		while(lastOccurence.first<=lastPageNumber){
+			if(copyRecord(firstOccurence, lastOccurence, fhin)){
+				break;
+			}
+			if(firstOccurence.second==PAGE_CONTENT_SIZE){
+				fhin.FlushPage(firstOccurence.first);
+			}
+			firstOccurence = nextPosition(firstOccurence);
+			lastOccurence = nextPosition(lastOccurence);
+		}
+
+		for(int i=lastOccurence.first+1; i<=lastPageNumber; i++){
+			if(!fhin.DisposePage(i)){ 
+				cout<<"Error"<<endl;
+			}
+		}
+		fhin.FlushPages();
 	}
+	fm->CloseFile(fhin);
+	fm->ClearBuffer();
+	delete fm;
 	queryfile.close();
-
-
-	FileManager fm;
-	// Create a brand new file
-	FileHandler fh = fm.CreateFile("temp.txt");
-	cout << "File created " << endl;
-
-	// Create a new page
-	PageHandler ph = fh.NewPage ();
-	char *data = ph.GetData ();
-
-	// Store an integer at the very first location
-	int num = 5;
-	memcpy (&data[0], &num, sizeof(int));
-
-	// Store an integer at the second location
-	num = 1000;
-	memcpy (&data[4], &num, sizeof(int));
-
-	// Flush the page
-	fh.FlushPages ();
-	cout << "Data written and flushed" << endl;
-
-	// Close the file
-	fm.CloseFile(fh);
-
-	// Reopen the same file, but for reading this time
-	fh = fm.OpenFile ("temp.txt");
-	cout << "File opened" << endl;
-
-	// Get the very first page and its data
-	ph = fh.FirstPage ();
-	data = ph.GetData ();
-
-	// Output the first integer
-	memcpy (&num, &data[0], sizeof(int));
-	cout << "First number: " << num << endl;
-
-	// Output the second integer
-	memcpy (&num, &data[4], sizeof(int));
-	cout << "Second number: " << num << endl;;
-
-	// Close the file and destory it
-	fm.CloseFile (fh);
-	fm.DestroyFile ("temp.txt");
 }
