@@ -69,8 +69,6 @@ int main(int argc, char** argv) {
 	//INFORM
 	fhin2.FlushPage(endPageNum2);
 
-	int direction = 1;
-
 	for(int currPageNum1 = startPageNum1; currPageNum1<=endPageNum1; currPageNum1+=1){
 		// INFORM: this was moved out of for loop
 		inputPage1 = fhin1.PageAt(currPageNum1);

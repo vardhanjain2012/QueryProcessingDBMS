@@ -1,6 +1,4 @@
-//Sample file for students to get their code running
-
-#include<iostream>
+#include <iostream>
 #include "file_manager.h"
 #include "errors.h"
 #include "constants.h"
@@ -52,6 +50,8 @@ int main(int argc, char** argv) {
 	char * bigdata = lp.GetData();
 
 	memcpy(&small, &smalldata[0], sizeof(int));
+
+	//OPINION: Operations inside a page also need to be binary search based
 	for(int i=0, num =0;i<PAGE_CONTENT_SIZE;i+= sizeof(int)){
 		memcpy (&num,&bigdata[i],  sizeof(int));
 		if(num == INT32_MIN && i!=0){
@@ -115,8 +115,11 @@ int main(int argc, char** argv) {
 
 
 			//ready to write
-			if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+			//OPINION: Is this needed here?
+			if(outIndex>=PAGE_CONTENT_SIZE)){
 				fhout.UnpinPage(outPageNumber);
+				//INFORM
+				fhout.FlushPage(outPageNumber);
 				outPage = fhout.NewPage();
 				outPageNumber+=1;
 				outIndex=0;
@@ -129,8 +132,10 @@ int main(int argc, char** argv) {
 				//write all occurences in between
 				while(firstPageNumber!=lastPageNumber || firstIndex!=lastIndex){
 					//ready to write
-					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+					if(outIndex>=PAGE_CONTENT_SIZE)){
 						fhout.UnpinPage(outPageNumber);
+						//INFORM
+						fhout.FlushPage(outPageNumber);
 						outPage = fhout.NewPage();
 						outPageNumber+=1;
 						outIndex=0;
