@@ -2,6 +2,13 @@ sampleobjects = buffer_manager.o file_manager.o
 
 basicfiles = constants.h errors.h file_manager.h buffer_manager.h 
 
+
+viewcontent : $(sampleobjects) viewcontent.o
+	     g++ -std=c++11 -o viewcontent $(sampleobjects) viewcontent.o
+
+viewcontent.o : viewcontent.cpp
+	g++ -std=c++11 -c viewcontent.cpp
+
 join2 : $(sampleobjects) join2.o
 	     g++ -std=c++11 -o join2 $(sampleobjects) join2.o
 
