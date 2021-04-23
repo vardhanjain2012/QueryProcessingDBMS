@@ -1,4 +1,4 @@
-#include <iostream>
+#include<iostream>
 #include "file_manager.h"
 #include "errors.h"
 #include "constants.h"
@@ -8,6 +8,8 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <climits>
+#include <cstdint> 
 
 using namespace std;
 
@@ -43,18 +45,16 @@ int main(int argc, char** argv) {
 	fm = new FileManager();
 	FileHandler fhin = fm->OpenFile(inputfileName);
 	FileHandler fhout = fm->CreateFile(outfileName);
-	int small(INT32_MAX), big(INT32_MIN);
+	int small(INT_MAX), big(INT_MIN);
 
 	PageHandler fp(fhin.FirstPage()), lp(fhin.LastPage());
 	char * smalldata = fp.GetData();
 	char * bigdata = lp.GetData();
 
 	memcpy(&small, &smalldata[0], sizeof(int));
-
-	//OPINION: Operations inside a page also need to be binary search based
 	for(int i=0, num =0;i<PAGE_CONTENT_SIZE;i+= sizeof(int)){
 		memcpy (&num,&bigdata[i],  sizeof(int));
-		if(num == INT32_MIN && i!=0){
+		if(num == INT_MIN && i!=0){
 			memcpy (&big, &bigdata[i-sizeof(int)],  sizeof(int));
 			break;
 		}
@@ -63,32 +63,37 @@ int main(int argc, char** argv) {
 	fhin.UnpinPage(fp.GetPageNum());
 	fhin.UnpinPage(lp.GetPageNum());
 
-	cout<<"LIMITS:"<<small<<","<<big<<endl;
+	// cout<<"LIMITS:"<<small<<","<<big<<endl;
 	ifstream queryfile(queryfileName);
 	string myText;
 	int myInt;
 	PageHandler outPage = fhout.NewPage();
+	int tmp = INT_MIN;
+	char* dataOut_tmp = outPage.GetData();
+	for(int k=0;k<PAGE_CONTENT_SIZE;k+=sizeof(int)){
+		memcpy (&dataOut_tmp[k], &tmp, sizeof(int));
+	}
 	int outPageNumber = 0;
 	int outIndex = 0;
 
-	cout<<"STARTING"<<endl;
+	// cout<<"STARTING"<<endl;
 
 	while (getline (queryfile, myText)) {
 		stringstream ss(myText);
 		ss>>myText;
 		ss>>myInt;
-		cout<<"NEW INPUT "<<myInt<<endl;
+		// cout<<"NEW INPUT "<<myInt<<endl;
 		// cout<<"Search "<<myInt<<endl;
 
 		if(myInt>=small && myInt<=big){
 			//get first and last occurence of number
 			int firstPageNumber = getFirstPage(fhin,myInt);
-			cout<<"GOOD -> "<<firstPageNumber<<endl;
+			// cout<<"GOOD -> "<<firstPageNumber<<endl;
 			int lastPageNumber = getLastPage(fhin, myInt);
-			cout<<"GREAT -> "<<lastPageNumber<<endl;
+			// cout<<"GREAT -> "<<lastPageNumber<<endl;
 
-			printPage(fhin, firstPageNumber);
-			printPage(fhin, lastPageNumber);
+			// printPage(fhin, firstPageNumber);
+			// printPage(fhin, lastPageNumber);
 			PageHandler firstPage = fhin.PageAt(firstPageNumber);
 			int firstIndex(-1);
 			char* data = firstPage.GetData();
@@ -115,37 +120,42 @@ int main(int argc, char** argv) {
 
 
 			//ready to write
-			//OPINION: Is this needed here?
-			if(outIndex>=PAGE_CONTENT_SIZE)){
+			if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 				fhout.UnpinPage(outPageNumber);
-				//INFORM
-				fhout.FlushPage(outPageNumber);
 				outPage = fhout.NewPage();
+				pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+				char* dataOut1 = outPage.GetData();
+				for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+					memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+				}
 				outPageNumber+=1;
 				outIndex=0;
 			}
 
 			//debugging
-			cout<<"The first occurence is Page, index: "<<firstPageNumber<<","<<firstIndex<<endl;
-			cout<<"The last occurence is Page, index: "<<lastPageNumber<<","<<lastIndex<<endl<<endl;
+			// cout<<"The first occurence is Page, index: "<<firstPageNumber<<","<<firstIndex<<endl;
+			// cout<<"The last occurence is Page, index: "<<lastPageNumber<<","<<lastIndex<<endl<<endl;
 			if(firstIndex != -1){
 				//write all occurences in between
 				while(firstPageNumber!=lastPageNumber || firstIndex!=lastIndex){
 					//ready to write
-					if(outIndex>=PAGE_CONTENT_SIZE)){
+					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 						fhout.UnpinPage(outPageNumber);
-						//INFORM
-						fhout.FlushPage(outPageNumber);
 						outPage = fhout.NewPage();
+						pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+						char* dataOut1 = outPage.GetData();
+						for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+							memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+						}
 						outPageNumber+=1;
 						outIndex=0;
 					}
 
 					//write the value
-					pair<int,int> out = make_pair(firstPageNumber,firstIndex);
+					pair<int,int> out = make_pair(firstPageNumber,firstIndex/sizeof(int));
 					char* dataOut = outPage.GetData();
 					memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
-					cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
+					// cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 					fhout.MarkDirty(outPageNumber);
 					outIndex+=sizeof(pair<int, int>);
 
@@ -162,14 +172,19 @@ int main(int argc, char** argv) {
 				if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 					fhout.UnpinPage(outPageNumber);
 					outPage = fhout.NewPage();
+					pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+					char* dataOut1 = outPage.GetData();
+					for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+						memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+					}
 					outPageNumber+=1;
 					outIndex=0;
 				}
 
-				pair<int,int> out = make_pair(firstPageNumber,firstIndex);
+				pair<int,int> out = make_pair(firstPageNumber,firstIndex/sizeof(int));
 				char* dataOut = outPage.GetData();
 				memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
-				cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
+				// cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 				fhout.MarkDirty(outPageNumber);
 				outIndex+=sizeof(pair<int, int>);
 			}
@@ -180,6 +195,11 @@ int main(int argc, char** argv) {
 		if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 			fhout.UnpinPage(outPageNumber);
 			outPage = fhout.NewPage();
+			pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+			char* dataOut1 = outPage.GetData();
+			for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+				memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+			}
 			outPageNumber+=1;
 			outIndex=0;
 		}
@@ -187,7 +207,7 @@ int main(int argc, char** argv) {
 		pair<int,int> out = make_pair(-1,-1);
 		char* dataOut = outPage.GetData();
 		memcpy (&dataOut[outIndex], &out, sizeof(pair<int, int>));
-		cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
+		// cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<out.first<<","<<out.second<<endl;
 		fhout.MarkDirty(outPageNumber);
 		outIndex+=sizeof(pair<int, int>);
 	}
@@ -196,17 +216,15 @@ int main(int argc, char** argv) {
 	if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 		fhout.UnpinPage(outPageNumber);
 		outPage = fhout.NewPage();
+		pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
+		char* dataOut1 = outPage.GetData();
+		for(int j=0;j<PAGE_CONTENT_SIZE;j+=sizeof(pair<int, int>)){
+			memcpy (&dataOut1[j], &tmpPair, sizeof(pair<int, int>));
+		}
 		outPageNumber+=1;
 		outIndex=0;
 	}
 	//write (-1,-1) in the end;
-	int out = INT32_MIN;
-	char* dataOut = outPage.GetData();
-	memcpy (&dataOut[outIndex], &out, sizeof(int));
-	cout<<"----------------OUT-----"<<outPageNumber<<","<<outIndex<<" -> "<<INT32_MIN<<endl;
-	fhout.MarkDirty(outPageNumber);
-	outIndex+=sizeof(int);
-
 	fm->CloseFile(fhin);
 	fm->CloseFile(fhout);
 	fm->ClearBuffer();
@@ -235,7 +253,7 @@ int isLess(PageHandler pg, int val, bool lastpage) {
 	char *data = pg.GetData();
 	int nums(0), numl(0);
 	memcpy(&nums, &data[0], sizeof(int));
-	if(nums == INT32_MIN){
+	if(nums == INT_MIN){
 		cerr<<"GIVEN PAGE IS EMPTY!!"<<endl;
 		exit(0);		
 	}
@@ -245,7 +263,7 @@ int isLess(PageHandler pg, int val, bool lastpage) {
 	else{
 		for(int i=0;i<PAGE_CONTENT_SIZE;i+=sizeof(int)){
 			memcpy (&numl, &data[i], sizeof(int));
-			if(numl == INT32_MIN){
+			if(numl == INT_MIN){
 				// cout<<"WOW"<<endl;
 				memcpy (&numl, &data[i-4], sizeof(int));
 				// cout<<nums<<numl<<val<<endl;
@@ -287,12 +305,8 @@ int getFirstPage(FileHandler fhin, int myInt){
 		firstPageObj = fhin.PageAt(firstPageNumber);
 		int a = isLess(firstPageObj, myInt, false);
 		fhin.UnpinPage(firstPageNumber);
-		
-		lastPageObj = fhin.PageAt(lastPageNumber);
-		int b = isLess(lastPageObj, myInt, isLastPage);
-		fhin.UnpinPage(lastPageNumber);
 
-		if(a == -1 || a == 0 || a == 3){
+		if(a == -1 || a == 0 || a == 3 || a == 1){
 			break;
 		}
 		if(a == -2){
@@ -335,15 +349,11 @@ int getLastPage(FileHandler fhin, int myInt){
 
 	while(firstPageNumber<lastPageNumber){
 
-		firstPageObj = fhin.PageAt(firstPageNumber);
-		int a = isLess(firstPageObj, myInt, false);
-		fhin.UnpinPage(firstPageNumber);
-		
 		lastPageObj = fhin.PageAt(lastPageNumber);
 		int b = isLess(lastPageObj, myInt, isLastPage);
 		fhin.UnpinPage(lastPageNumber);
 
-		if(b == 1 || b == 0 || b == 3){
+		if(b == 1 || b == 0 || b == 3 || b == -1){
 			break;
 		}
 		if(b == 2){

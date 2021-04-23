@@ -1,11 +1,9 @@
-//Sample file for students to get their code running
-
 #include<iostream>
 #include "file_manager.h"
 #include "errors.h"
 #include<cstring>
 
-//included by me
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -32,13 +30,18 @@ int main(int argc, char** argv) {
 	string myText;
 	int myInt;
 	PageHandler outPage = fhout.NewPage();
+	int tmp = INT_MIN;
+	char* dataOut_tmp = outPage.GetData();
+	for(int k=0;k<PAGE_CONTENT_SIZE;k+=sizeof(int)){
+		memcpy (&dataOut_tmp[k], &tmp, sizeof(int));
+	}
 	int outPageNumber = 0;
 	int outIndex = 0;
 	while (getline (queryfile, myText)) {
 		stringstream ss(myText);
 		ss>>myText;
 		ss>>myInt;
-		cout<<"Search "<<myInt<<endl;
+		// cout<<"Search "<<myInt<<endl;
 
 		PageHandler firstPage = fhin.FirstPage();
 		int firstPageNumber = firstPage.GetPageNum();
@@ -56,7 +59,7 @@ int main(int argc, char** argv) {
 				memcpy (&num, &data[i], sizeof(int));
 				// cout<<"Page: "<<currPageNumber<<" index: "<<i<<" num: "<<num<<endl;
 				if(num==myInt){
-					cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
+					// cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
 					pair<int, int> mySearch = make_pair(currPageNumber, i/(sizeof(int)));
 					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
 						fhout.UnpinPage(outPageNumber);

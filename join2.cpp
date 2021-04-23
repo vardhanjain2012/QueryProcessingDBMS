@@ -1,11 +1,11 @@
-// TORUN: ./join1 TestCases/TC_join1/input1_join1 TestCases/TC_join1/input2_join1 TestCases/TC_join1/myOutput
+// TORUN: ./join2 TestCases/TC_join2/input1_join2 TestCases/TC_join2/input2_join2_updated TestCases/TC_join2/myOutput
+// cmp TestCases/TC_join2/myOutput TestCases/TC_join2/output_join2 && echo 'SUCCESS' || echo 'FAILED'
 
 #include<iostream>
 #include "file_manager.h"
 #include "errors.h"
 #include<cstring>
 
-// included by me
 #include <climits>
 #include <cstdint> 
 
@@ -34,7 +34,6 @@ int main(int argc, char** argv) {
 
 	PageHandler outPage = fhout.NewPage();
 
-	//INFORM: This is essential
 	int tmp = INT_MIN;
 	char* dataOut_tmp = outPage.GetData();
 	for(int k=0;k<PAGE_CONTENT_SIZE;k+=sizeof(int)){
@@ -48,52 +47,49 @@ int main(int argc, char** argv) {
 	PageHandler inputPage1 = fhin1.FirstPage();
 	startPageNum1 = inputPage1.GetPageNum();
 	fhin1.UnpinPage(startPageNum1);
-	//INFORM
 	fhin1.FlushPage(startPageNum1);
 	int endPageNum1;
 	inputPage1 = fhin1.LastPage();
 	endPageNum1 = inputPage1.GetPageNum();
 	fhin1.UnpinPage(endPageNum1);
-	//INFORM
 	fhin1.FlushPage(endPageNum1);
 
 	int startPageNum2;
 	PageHandler inputPage2 = fhin2.FirstPage();
 	startPageNum2 = inputPage2.GetPageNum();
 	fhin2.UnpinPage(startPageNum2);
-	//INFORM
 	fhin2.FlushPage(startPageNum2);
 
 	int endPageNum2;
 	inputPage2 = fhin2.LastPage();
 	endPageNum2 = inputPage2.GetPageNum();
-	//INFORM: there was a typo here fhin1 instead of fhin2
 	fhin2.UnpinPage(endPageNum2);
-	//INFORM
 	fhin2.FlushPage(endPageNum2);
 
+	int num1, num2;
+
 	for(int currPageNum1 = startPageNum1; currPageNum1<=endPageNum1; currPageNum1+=1){
-		// INFORM: this was moved out of for loop
 		inputPage1 = fhin1.PageAt(currPageNum1);
 		char* dataIn1 = inputPage1.GetData();
-
-		for(int currPageNum2 = startPageNum2; currPageNum2<=endPageNum2; currPageNum2+=1){
-			// INFORM: this was moved out of for loop
-			inputPage2 = fhin2.PageAt(currPageNum2);
-			char* dataIn2 = inputPage2.GetData();
-
-			int num1, num2;
-
-			for(int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
-				memcpy (&num1, &dataIn1[i], sizeof(int));
+		for(int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
+			memcpy (&num1, &dataIn1[i], sizeof(int));
+			if(num1 == INT_MIN){
+					break;
+			}
+			int currPageNum2 = getFirstPage(fhin2, num1);
+			while(currPageNum2<=endPageNum2){
+				
+				inputPage2 = fhin2.PageAt(currPageNum2);
+				char* dataIn2 = inputPage2.GetData();
 				
 				for(int j=0; j<PAGE_CONTENT_SIZE; j+=sizeof(int)){
-					memcpy (&num2, &dataIn2[j], sizeof(int));
-					if(num1==num2){
 
-						// cout<<"Found! "<<currPageNumber1<<" "<<i<<endl;
+					memcpy (&num2, &dataIn2[j], sizeof(int));
+					if(num2 == INT_MIN || num2 > num1){
+						break;
+					}
+					if(num1 == num2){
 						if(outIndex>=PAGE_CONTENT_SIZE){
-							//INFORM/ASK: Can unpin happen after flush as was earlier?
 							fhout.UnpinPage(outPageNumber);
 							fhout.FlushPage(outPageNumber);
 							outPage = fhout.NewPage();
@@ -112,15 +108,20 @@ int main(int argc, char** argv) {
 
 					}
 				}
-			}
-			fhin2.UnpinPage(currPageNum2);
+
+				fhin2.UnpinPage(currPageNum2);
+				if(num2 == INT_MIN || num2 > num1){
+						break;
+				}
+				else{
+					currPageNum2 += 1;
+				}
+			}	
 		}
 		fhin1.UnpinPage(currPageNum1);
-		//INFORM: necessary to do this as only 1 page of file-1 allowed in memory
 		fhin1.FlushPage(currPageNum1);
 	}
 
-	//INFORM/ASK: unpin-flush the last outpage?
 	fhout.UnpinPage(outPageNumber);
 	fhout.FlushPage(outPageNumber);
 
@@ -128,7 +129,6 @@ int main(int argc, char** argv) {
 	fm->CloseFile(fhin2);
 	fm->CloseFile(fhout);
 
-	//TODO/ASK: Is this sufficient to take of dirty files as well?
 	fm->ClearBuffer();
 
 	delete fm;
@@ -156,17 +156,17 @@ int isLess(PageHandler inputPage, int val, bool isLastpage) {
 		}
 	}
 
-	if(nums > val)
-		return 2;
-	if(nume < val)
-		return -2;
-	if(nums == val && nume > val)
-		return 1;	
-	if(nums < val && nume == val)
-		return -1;	
-	if(nums < val && nume > val)
-		return 3;  
-	return 0;
+	if(nums < val){
+		if (nume >= val)
+			return 0;
+		else
+			return 1;
+	}
+	if(nums == val)
+		return -1;
+	
+	return INT_MIN;
+	
 }
 
 
@@ -186,36 +186,39 @@ int getFirstPage(FileHandler fhin, int val){
 
 	while(startPageNumber < endPageNumber){
 
-		startPage = fhin.PageAt(startPageNumber);
+		PageHandler startPage = fhin.PageAt(startPageNumber);
 		int isLessStart = isLess(startPage, val, false);
 		fhin.UnpinPage(startPageNumber);
 		fhin.FlushPage(startPageNumber);
-		
-		// endPage = fhin.PageAt(endPageNumber);
-		// int isLessEnd = isLess(endPage, val, isLastPage);
-		// fhin.UnpinPage(endPageNumber);
-		// fhin.FlushPage(endPageNumber);
 
-		if(isLessStart == -1 || isLessStart == 0 || isLessStart == 3 || isLessStart == 1){
+		int midPageNumber = floor((startPageNumber+endPageNumber)/2);
+
+		PageHandler midPage = fhin.PageAt(midPageNumber);
+		int isLessMid = isLess(midPage, val,false);
+		fhin.UnpinPage(midPageNumber);
+		fhin.FlushPage(midPageNumber);
+
+		// PageHandler endPage = fhin.PageAt(endPageNumber);
+		// int isLessEnd = isLess(endPage, val,false);
+		// fhin.UnpinPage(endPageNumber);
+		// fhin.FlushPage(endPageNumber);	
+
+		if(isLessStart == INT_MIN){
+			startPageNumber = INT_MIN;
 			break;
 		}
-		if(isLessStart == -2){
-			int midPageNumber = (int)(startPageNumber+endPageNumber)/2;
-			PageHandler midPage = fhin.PageAt(midPageNumber);
-			int isLessMid = isLess(midPage, val,false);
-			fhin.UnpinPage(midPageNumber);	
-
-			if(isLessMid == -2){
-				startPageNumber = midPageNumber+1;
-			}
-			else if(isLessMid == -1 || isLessMid == 3){				
-				startPageNumber = midPageNumber;
-				break;								
-			}
-			else if(isLessMid >= 0){
+		if(isLessStart == 0){
+			break;
+		}
+		if(isLessStart == -1){
+			endPageNumber = midPageNumber;
+			isLastPage = false;
+		}	
+		if(isLessStart == 1){
+			if(isLessMid < 0)
 				endPageNumber = midPageNumber;
-				isLastPage = false;
-			}
+			else
+				startPageNumber = midPageNumber;
 		}			
 	}
 
