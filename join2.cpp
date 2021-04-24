@@ -8,7 +8,7 @@
 
 #include <climits>
 #include <cstdint> 
-
+#include <math.h>
 using namespace std;
 
 int isLess(PageHandler pg, int val, bool lastpage);

@@ -190,10 +190,11 @@ int main(int argc, char** argv) {
 			//ASK: What does DisposePage() do? The documentation says it just marks dirty and unpins. Looks like there is now way to delete pages. Should we fill all remaining pages with INT_MIN?
 			if(!fhin.DisposePage(i)){ 
 				//ASK: Why is printing this error necessary?
+				//ANS: Jus for debugging purposes
 				cout<<"Error"<<endl;
 			}
 		}
-		//ASK: Why is this essential to happen here? Can it not happpen outside the while loop? (for better efficiancy)
+		//ASK: Why is this essential to happen here? Can it not happpen outside the while loop? (for better efficiency)
 		fhin.FlushPages();
 	}
 	fm->CloseFile(fhin);

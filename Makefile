@@ -2,13 +2,6 @@ sampleobjects = buffer_manager.o file_manager.o
 
 basicfiles = constants.h errors.h file_manager.h buffer_manager.h 
 
-
-viewcontent : $(sampleobjects) viewcontent.o
-	     g++ -std=c++11 -o viewcontent $(sampleobjects) viewcontent.o
-
-viewcontent.o : viewcontent.cpp
-	g++ -std=c++11 -c viewcontent.cpp
-
 join2 : $(sampleobjects) join2.o
 	     g++ -std=c++11 -o join2 $(sampleobjects) join2.o
 
@@ -33,12 +26,6 @@ binarysearch : $(sampleobjects) binarysearch.o
 binarysearch.o : binarysearch.cpp
 	g++ -std=c++11 -c binarysearch.cpp
 
-debug : $(sampleobjects) debug.o
-	g++ -std=c++11 -o debug $(sampleobjects) debug.o
-
-debug.o : debug.cpp
-	g++ -std=c++11 -c debug.cpp
-
 linearsearch : $(sampleobjects) linearsearch.o
 	     g++ -std=c++11 -o linearsearch $(sampleobjects) linearsearch.o
 
@@ -59,4 +46,4 @@ file_manager.o : file_manager.cpp $(basicfiles)
 
 clean :
 	rm -f *.o
-	rm -f sample_run linearsearch binarysearch deletion join1 join2
+	rm -f sample_run linearsearch binarysearch deletion join1 join2 debug viewcontent
