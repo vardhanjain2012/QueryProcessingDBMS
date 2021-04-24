@@ -58,11 +58,15 @@ int main(int argc, char** argv) {
 			for(unsigned int i=0; i<PAGE_CONTENT_SIZE; i+=sizeof(int)){
 				memcpy (&num, &data[i], sizeof(int));
 				// cout<<"Page: "<<currPageNumber<<" index: "<<i<<" num: "<<num<<endl;
+				if(num == INT_MIN){
+					break;
+				}
 				if(num==myInt){
 					// cout<<"Found! "<<currPageNumber<<" "<<i<<endl;
 					pair<int, int> mySearch = make_pair(currPageNumber, i/(sizeof(int)));
-					if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+					if(outIndex>=PAGE_CONTENT_SIZE){
 						fhout.UnpinPage(outPageNumber);
+						fhout.FlushPage(outPageNumber);
 						outPage = fhout.NewPage();
 						pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
 						char* dataOut1 = outPage.GetData();
@@ -83,8 +87,9 @@ int main(int argc, char** argv) {
 			currPageNumber+=1;
 		}
 		pair<int, int> mySearch = make_pair(-1, -1);
-		if(outIndex>=PAGE_CONTENT_SIZE&&fhout.FlushPage(outPageNumber)){
+		if(outIndex>=PAGE_CONTENT_SIZE){
 			fhout.UnpinPage(outPageNumber);
+			fhout.FlushPage(outPageNumber);
 			outPage = fhout.NewPage();
 			pair<int, int> tmpPair = make_pair(INT_MIN, INT_MIN);
 			char* dataOut1 = outPage.GetData();
@@ -101,6 +106,7 @@ int main(int argc, char** argv) {
 		// break;
 	}
 	// fm->PrintBuffer();
+	fhout.FlushPages();
 	fm->CloseFile(fhin);
 	fm->CloseFile(fhout);
 	fm->ClearBuffer();
